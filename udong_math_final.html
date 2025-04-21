@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>우동이 계산교실</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial';
+      background-color: #fcefe6;
+    }
+    .container {
+      position: relative;
+      width: 768px;
+      height: 768px;
+      background-image: url('clean_forest_classroom.png');
+      background-size: cover;
+      background-position: center;
+      margin: 0 auto;
+    }
+    .setup-box {
+      text-align: center;
+      padding: 20px;
+      background: #fff8f0;
+      font-size: 1.1em;
+    }
+    .question-box {
+      position: absolute;
+      top: 240px;
+      left: 160px;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px;
+      border-radius: 15px;
+      font-size: 1.5em;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    #answer, #remainder {
+      width: 60px;
+      font-size: 1em;
+      margin-left: 10px;
+    }
+    .feedback {
+      position: absolute;
+      top: 320px;
+      left: 160px;
+      font-size: 1.2em;
+      color: green;
+      font-weight: bold;
+      background-color: rgba(255,255,255,0.8);
+      padding: 5px 10px;
+      border-radius: 10px;
+    }
+    .counter-box {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 0.9em;
+    }
+    .speech-bubble {
+      display: none;
+      position: absolute;
+      top: 100px;
+      left: 520px;
+      max-width: 250px;
+      background: #fff;
+      border: 2px solid #333;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 1em;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="setup-box">
+    안녕! 나는 카피바라 선생님이야! 같이 재미있게 계산 공부를 해보자!<br><br>
+    숫자 범위: 
+    <input type="number" id="min" value="1" /> ~ 
+    <input type="number" id="max" value="10" />
+    &nbsp;&nbsp;
+    연산: 
+    <select id="operator">
+      <option value="+">더하기 (+)</option>
+      <option value="-">빼기 (-)</option>
+      <option value="*">곱하기 (×)</option>
+      <option value="/">나누기 (÷)</option>
+    </select>
+    <button onclick="startQuiz()">시작!</button>
+  </div>
+
+  <div class="container">
+    <div class="counter-box" id="counter">+ : 0<br>- : 0<br>× : 0<br>÷ : 0</div>
+    <div class="speech-bubble" id="bubble">안녕! 나는 카피바라 선생님이야!</div>
+    <div class="question-box" id="quiz" style="display:none;">
+      <span id="question">3 + 4 =</span>
+      <span id="input-area">
+        <input type="number" id="answer" />
+      </span>
+      <button onclick="checkAnswer()">정답!</button>
+    </div>
+    <div id="feedback" class="feedback" style="display:none;"></div>
+  </div>
+
+  <audio id="correct-sound" src="dingdong.mp3"></audio>
+  <audio id="wrong-sound" src="wrong.mp3"></audio>
+
+  <script>
+    let currentAnswer = 0;
+    let currentOperator = '+';
+    const counters = { '+': 0, '-': 0, '*': 0, '/': 0 };
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function updateCounterDisplay() {
+      document.getElementById('counter').innerHTML =
+        `+ : ${counters['+']}<br>` +
+        `- : ${counters['-']}<br>` +
+        `× : ${counters['*']}<br>` +
+        `÷ : ${counters['/']}`;
+    }
+
+    function generateQuestion() {
+      const min = parseInt(document.getElementById('min').value);
+      const max = parseInt(document.getElementById('max').value);
+      const op = document.getElementById('operator').value;
+      currentOperator = op;
+
+      let a = getRandomInt(min, max);
+      let b = getRandomInt(min, max);
+
+      if (op === '-') {
+        while (a <= b) {
+          a = getRandomInt(min, max);
+          b = getRandomInt(min, max);
+        }
+      } else if (op === '/') {
+        do {
+          a = getRandomInt(min, max);
+          b = getRandomInt(min, max);
+        } while (b === 0 || a % b === 0 || a === b);
+      }
+
+      document.getElementById('question').textContent = `${a} ${op} ${b} =`;
+
+      let inputHTML = '';
+      if (op === '/') {
+        inputHTML = '<input type="number" id="answer" placeholder="몫" style="width:60px;" /> 나머지 <input type="number" id="remainder" placeholder="0" style="width:60px;" />';
+        currentAnswer = a / b;
+      } else {
+        inputHTML = '<input type="number" id="answer" style="width:60px;" />';
+        switch (op) {
+          case '+': currentAnswer = a + b; break;
+          case '-': currentAnswer = a - b; break;
+          case '*': currentAnswer = a * b; break;
+        }
+      }
+      document.getElementById('input-area').innerHTML = inputHTML;
+    }
+
+    function startQuiz() {
+      document.getElementById('quiz').style.display = 'block';
+      document.getElementById('feedback').style.display = 'none';
+      document.getElementById("bubble").style.display = "block";
+      document.getElementById("bubble").textContent = "문제를 잘 보고 정답을 입력해보자!";
+      generateQuestion();
+    }
+
+    function checkAnswer() {
+      const op = currentOperator;
+      const feedback = document.getElementById('feedback');
+      const correctSound = document.getElementById('correct-sound');
+      const wrongSound = document.getElementById('wrong-sound');
+
+      if (op === '/') {
+        const qText = document.getElementById("question").textContent.split(" ");
+        const a = Number(qText[0]);
+        const b = Number(qText[2]);
+        const correctQuotient = Math.floor(a / b);
+        const correctRemainder = a % b;
+        const userQuotient = Number(document.getElementById("answer").value);
+        const userRemainder = Number(document.getElementById("remainder").value);
+        if (userQuotient === correctQuotient && userRemainder === correctRemainder) {
+          correctSound.play();
+          feedback.textContent = "정답이에요! 다음 문제를 풀어보자~";
+          feedback.style.color = 'green';
+          document.getElementById("bubble").textContent = feedback.textContent;
+          counters[op]++;
+          updateCounterDisplay();
+          setTimeout(() => {
+            feedback.style.display = 'none';
+            generateQuestion();
+          }, 1500);
+        } else {
+          wrongSound.play();
+          feedback.textContent = "아쉽지만 다시 풀어보자!";
+          feedback.style.color = 'red';
+          document.getElementById("bubble").textContent = feedback.textContent;
+        }
+      } else {
+        const userAnswer = Number(document.getElementById("answer").value);
+        if (userAnswer === currentAnswer) {
+          correctSound.play();
+          feedback.textContent = "정답이에요! 다음 문제를 풀어보자~";
+          feedback.style.color = 'green';
+          document.getElementById("bubble").textContent = feedback.textContent;
+          counters[op]++;
+          updateCounterDisplay();
+          setTimeout(() => {
+            feedback.style.display = 'none';
+            generateQuestion();
+          }, 1500);
+        } else {
+          wrongSound.play();
+          feedback.textContent = "아쉽지만 다시 풀어보자!";
+          feedback.style.color = 'red';
+          document.getElementById("bubble").textContent = feedback.textContent;
+        }
+      }
+      feedback.style.display = 'block';
+    }
+
+    window.onload = () => {
+      updateCounterDisplay();
+    };
+  </script>
+</body>
+</html>
